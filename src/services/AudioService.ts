@@ -114,6 +114,26 @@ export class AudioService {
   }
 
   /**
+   * Toca o rosnar (para usuários monitorados)
+   */
+  playGrowlAudio(
+    connection: VoiceConnection,
+    timeLimitMs: number,
+    onFinish?: () => void
+  ): void {
+    const growlPath = join(this.audiosPath, AUDIO_CONFIG.GROWL_BARK_FILE)
+
+    if (!fs.existsSync(growlPath)) {
+      console.warn(`⚠️  Arquivo de rosnar não encontrado: ${AUDIO_CONFIG.GROWL_BARK_FILE}`)
+      if (onFinish) onFinish()
+      return
+    }
+
+    console.log('😤 Rosnando para usuário monitorado...')
+    this.createPlayerWithTimeLimit(growlPath, connection, timeLimitMs, onFinish)
+  }
+
+  /**
    * Lista todos os arquivos de áudio disponíveis
    */
   listAvailableAudios(): string[] {

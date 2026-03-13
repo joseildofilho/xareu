@@ -22,4 +22,12 @@ export const AUDIO_CONFIG = {
 
   /** Arquivo de áudio padrão para latido único */
   DEFAULT_BARK_FILE: 'latido-unico.mp3',
+
+  /** Arquivo de áudio para rosnar (usuários monitorados) */
+  GROWL_BARK_FILE: 'rosnar.mp3',
+} as const
+
+export const DB_CONFIG = {
+  /** Caminho para o arquivo do banco de dados SQLite */
+  DB_PATH: 'xareu.db',
 } as const

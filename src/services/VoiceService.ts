@@ -6,6 +6,7 @@ import {
 } from '@discordjs/voice'
 import { Client } from 'discord.js'
 import { AudioService } from './AudioService'
+import { DatabaseService } from './DatabaseService'
 import { BOT_CONFIG } from '../config/constants'
 import { selectRandomMinute, minutesToMilliseconds } from '../utils/helpers'
 import { ActiveConnectionResult } from '../types'
@@ -16,11 +17,13 @@ import { ActiveConnectionResult } from '../types'
 export class VoiceService {
   private barkTimersByGuild = new Map<string, NodeJS.Timeout>()
   private audioService: AudioService
+  private databaseService: DatabaseService
   private client: Client
 
-  constructor(client: Client, audioService: AudioService) {
+  constructor(client: Client, audioService: AudioService, databaseService: DatabaseService) {
     this.client = client
     this.audioService = audioService
+    this.databaseService = databaseService
   }
 
   /**
@@ -60,14 +63,18 @@ export class VoiceService {
   /**
    * Lida com a entrada no canal de voz
    */
-  handleChannelEntry(voiceChannel: any, guildId: string): void {
+  handleChannelEntry(voiceChannel: any, guildId: string, username: string): void {
     console.log('   ✅ Usuário entrou no canal')
 
     try {
-      const connection = this.joinVoiceChannel(voiceChannel)
+      const connection = joinVoiceChannel({
+        channelId: voiceChannel.id,
+        guildId: voiceChannel.guild.id,
+        adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+      })
 
       setTimeout(() => {
-        this.playEntryAudio(guildId, connection)
+        this.playEntryAudio(guildId, connection, username)
       }, BOT_CONFIG.ENTRY_WAIT_TIME_MS)
     } catch (error) {
       console.error('❌ Erro ao entrar no canal:', error)
@@ -75,14 +82,25 @@ export class VoiceService {
   }
 
   /**
-   * Toca o áudio de entrada e inicia o ciclo de latidos
+   * Toca o áudio de entrada e, se o usuário for monitorado, rosna antes de iniciar o ciclo
    */
-  private playEntryAudio(guildId: string, connection: VoiceConnection): void {
+  private playEntryAudio(guildId: string, connection: VoiceConnection, username: string): void {
+    const isWatched = this.databaseService.isWatched(username)
+
     this.audioService.playEntryAudio(
       connection,
       BOT_CONFIG.AUDIO_TIME_LIMIT_MS,
       () => {
-        this.startRandomBarkCycle(guildId, connection)
+        if (isWatched) {
+          console.log(`👁️  Usuário monitorado detectado: ${username} — rosnando...`)
+          this.audioService.playGrowlAudio(
+            connection,
+            BOT_CONFIG.AUDIO_TIME_LIMIT_MS,
+            () => this.startRandomBarkCycle(guildId, connection)
+          )
+        } else {
+          this.startRandomBarkCycle(guildId, connection)
+        }
       }
     )
   }

@@ -37,7 +37,8 @@ export class VoiceStateHandler {
     // Usuário entrou ou mudou de canal
     const userJoinedOrMovedChannel = newState.channel && newState.channelId !== oldState.channelId
     if (userJoinedOrMovedChannel) {
-      this.voiceService.handleChannelEntry(newState.channel, newState.guild.id)
+      const username = newState.member?.user.username ?? ''
+      this.voiceService.handleChannelEntry(newState.channel, newState.guild.id, username)
       return
     }
 

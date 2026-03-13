@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, Partials } from 'discord.js'
 import { AudioService } from './services/AudioService'
 import { VoiceService } from './services/VoiceService'
 import { CommandService } from './services/CommandService'
+import { DatabaseService } from './services/DatabaseService'
 import { MessageHandler } from './handlers/MessageHandler'
 import { VoiceStateHandler } from './handlers/VoiceStateHandler'
 
@@ -11,6 +12,7 @@ import { VoiceStateHandler } from './handlers/VoiceStateHandler'
 export class DiscordBot {
   private client: Client
   private audioService: AudioService
+  private databaseService: DatabaseService
   private voiceService: VoiceService
   private commandService: CommandService
   private messageHandler: MessageHandler
@@ -34,8 +36,9 @@ export class DiscordBot {
 
     // Inicializa os serviços
     this.audioService = new AudioService()
-    this.voiceService = new VoiceService(this.client, this.audioService)
-    this.commandService = new CommandService(this.audioService, this.voiceService)
+    this.databaseService = new DatabaseService()
+    this.voiceService = new VoiceService(this.client, this.audioService, this.databaseService)
+    this.commandService = new CommandService(this.audioService, this.voiceService, this.databaseService)
 
     // Inicializa os handlers
     this.messageHandler = new MessageHandler(this.commandService)
@@ -108,6 +111,7 @@ export class DiscordBot {
   async stop(): Promise<void> {
     console.log('🛑 Encerrando bot...')
     await this.client.destroy()
+    this.databaseService.close()
     console.log('✅ Bot encerrado com sucesso')
   }
 
